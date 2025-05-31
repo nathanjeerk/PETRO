@@ -60,11 +60,25 @@ class _MainTabsState extends State<MainTabs> {
             ),
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        bottom: true,
-        child: Container(
-          height: 64,
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewPadding.bottom > 0
+              ? 0
+              : 12, // avoid over-padding
+        ),
+        decoration: BoxDecoration(
           color: Colors.grey[900],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 6,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
