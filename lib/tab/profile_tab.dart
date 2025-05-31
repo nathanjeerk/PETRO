@@ -6,6 +6,8 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 
+import '/settings/settings_page.dart';
+
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
 
@@ -54,47 +56,78 @@ class _ProfileTabState extends State<ProfileTab> {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: uploadProfilePic,
-            child: CircleAvatar(
-              radius: 50,
-              backgroundImage: profileImageUrl != null
-                  ? NetworkImage(profileImageUrl!)
-                  : const AssetImage('assets/profile_placeholder.png')
-                        as ImageProvider,
-            ),
+          // Top Row with Settings Button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Profile',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+              IconButton(
+                icon: const Icon(Icons.settings, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsPage()),
+                  );
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          const Text(
-            'PetLover_01',
-            style: TextStyle(fontSize: 20, color: Colors.white),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            FirebaseAuth.instance.currentUser!.uid,
-            style: const TextStyle(color: Colors.white38, fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-          TextButton.icon(
-            onPressed: () {
-              Clipboard.setData(
-                ClipboardData(text: FirebaseAuth.instance.currentUser!.uid),
-              );
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('UID copied to clipboard!')),
-              );
-            },
-            icon: const Icon(Icons.copy, size: 18, color: Colors.tealAccent),
-            label: const Text(
-              "Copy UID",
-              style: TextStyle(color: Colors.tealAccent),
+          const SizedBox(height: 16),
+
+          Center(
+            child: Column(
+              children: [
+                GestureDetector(
+                  onTap: uploadProfilePic,
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundImage: profileImageUrl != null
+                        ? NetworkImage(profileImageUrl!)
+                        : const AssetImage('assets/profile_placeholder.png')
+                              as ImageProvider,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'PetLover_01',
+                  style: TextStyle(fontSize: 20, color: Colors.white),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  user!.uid,
+                  style: const TextStyle(color: Colors.white38, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: user!.uid));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('UID copied to clipboard!')),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.copy,
+                    size: 18,
+                    color: Colors.tealAccent,
+                  ),
+                  label: const Text(
+                    "Copy UID",
+                    style: TextStyle(color: Colors.tealAccent),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           const _PhotoStats(),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           const _PhotoGrid(),
         ],
       ),
@@ -103,87 +136,62 @@ class _ProfileTabState extends State<ProfileTab> {
 }
 
 class _PhotoStats extends StatelessWidget {
-  const _PhotoStats({super.key});
+  const _PhotoStats();
 
   @override
   Widget build(BuildContext context) {
-    // You can make these dynamic later
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: const [
-        _StatItem(value: '12', label: 'Photos'),
-        SizedBox(width: 24),
-        _StatItem(value: '7', label: 'Friends'),
+        _StatItem(label: "Photos", value: "12"),
+        _StatItem(label: "Friends", value: "8"),
       ],
     );
   }
 }
 
 class _StatItem extends StatelessWidget {
-  final String value;
   final String label;
+  final String value;
 
-  const _StatItem({required this.value, required this.label, super.key});
+  const _StatItem({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(label, style: const TextStyle(color: Colors.white70)),
+        Text(value, style: TextStyle(fontSize: 18, color: Colors.white)),
+        SizedBox(height: 4),
+        Text(label, style: TextStyle(fontSize: 14, color: Colors.white54)),
       ],
     );
   }
 }
 
 class _PhotoGrid extends StatelessWidget {
-  const _PhotoGrid({super.key});
+  const _PhotoGrid();
 
   @override
   Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    // Placeholder images - replace with dynamic images from Firestore later
+    final List<String> samplePhotos = List.generate(
+      6,
+      (index) => 'https://placekitten.com/200/${200 + index}',
+    );
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('posts')
-          .where('userId', isEqualTo: uid)
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: CircularProgressIndicator(color: Colors.tealAccent),
-            ),
-          );
-        }
-
-        final docs = snapshot.data!.docs;
-
-        return GridView.builder(
-          itemCount: docs.length,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-          ),
-          itemBuilder: (context, index) {
-            final imageUrl = docs[index]['imageUrl'];
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(imageUrl, fit: BoxFit.cover),
-            );
-          },
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: samplePhotos.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 4,
+        crossAxisSpacing: 4,
+      ),
+      itemBuilder: (context, index) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(samplePhotos[index], fit: BoxFit.cover),
         );
       },
     );
